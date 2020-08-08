@@ -45,8 +45,12 @@ aws_region="$(pulumi -C infrastructure config get 'aws:region')"
 # Push site content to the bucket.
 echo "Synchronizing to $destination_bucket_uri..."
 
-# Make the bucket. If this fails, we can't make the bucket, so we shouldn't proceed.
-aws s3 mb $destination_bucket_uri --region $aws_region
+# Make the bucket. If this fails, there are two explanations, given the way we're naming
+# our buckets: either a previous run failed to complete successfully, in which case we
+# should simply proceed, or the bucket was somehow created in another account, in which
+# case subsequent operations on that bucket will fail, resulting in this script exiting
+# nonzero.
+aws s3 mb $destination_bucket_uri --region $aws_region || true
 
 # Make the bucket an S3 website.
 aws s3 website $destination_bucket_uri --index-document index.html --error-document 404.html
